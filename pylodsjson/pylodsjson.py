@@ -3,7 +3,7 @@ Created on Nov 26, 2017
 
 @author: Salim
 '''
-from pylods.core import Parser
+from pylods.core import Parser, ObjectMapper
 from pylods.dict import Dictionary
 import ijson
 
@@ -78,4 +78,15 @@ class JsonParser(Parser):
     
     def __init__(self):
         Parser.__init__(self, JSONDictionary())
+        
+
+
+class JsonObjectMapper(ObjectMapper):
+    '''
+        ObjectMapper for JSON
+    '''
     
+    
+    def __init__(self,  events):
+        ObjectMapper.__init__(self,JSONDictionary(),events);
+        
