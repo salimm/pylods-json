@@ -8,14 +8,24 @@ import parser
 
 
 
+class Job(Typed):
+    
+    def __init__(self, name=None, location=None):
+        self.name = name
+        self.location = location
+        
+
 class PersonInfo(Typed):
     
     def __init__(self, firstname=None, lastname=None, jobs=None):
         self.firstname = firstname
         self.lastname = lastname
         self.jobs = jobs
-        
     
+    def __str__(self):
+        return "{ first: "+self.firstname +", last: "+self.lastname +", jobs: "+ str(self.jobs)+"}";
+    
+PersonInfo.register_type("jobs", Job)
 
 class TestClass(Typed):
     
@@ -55,10 +65,10 @@ f = open("../sample2.json", 'r')
 
 parser = JsonParser()
 mapper = JsonObjectMapper(parser.parse(f))
-mapper.register_module(mod)
+# mapper.register_module(mod)
 
 
-res = mapper.parse_obj(TestClass)
+res = mapper.read_obj(TestClass)
  
 
 
