@@ -3,9 +3,12 @@ Created on Nov 26, 2017
 
 @author: Salim
 '''
-from pylods.core import Parser, ObjectMapper
+from pylods.deserialize import Parser
 from pylods.dict import Dictionary
 import ijson
+import json
+from pylods.mapper import ObjectMapper
+from pylods.serialize import DataFormatGenerator
 
 
 class JSONDictionary(Dictionary):
@@ -68,6 +71,58 @@ class JSONDictionary(Dictionary):
         return event[2]
     
     
+    ######################### OBJECT
+    
+    def write_object_start(self, numfields, outstream):
+        outstream.write("{")
+
+    def write_object_end(self, numfields, outstream):
+        outstream.write("}")
+    
+    def write_object_field_separator(self, name, value, outstream):
+        outstream.write(", ")
+    
+    def write_object_field_name(self, name, outstream):
+        outstream.write('"' + name + '\"')
+    
+    def write_object_name_value_separator(self, name, value, outstream):
+        outstream.write(': ')
+
+    ######################### ARRAY
+    
+    def write_array_start(self, length, outstream):
+        outstream.write(' [')
+    
+    def write_array_end(self, length, outstream):
+        outstream.write(' ]')
+    
+    def write_array_field_separator(self, value, outstream):
+        outstream.write(', ')
+     
+    
+    ######################### DICT
+    
+    def write_dict_start(self, numfields, outstream):
+        outstream.write('{ ')
+    
+    def write_dict_end(self, numfields, outstream):
+        outstream.write(' }')
+    
+    def write_dict_field_separator(self, name, value, outstream):
+        outstream.write(', ')    
+    
+    def write_dict_field_name(self, name, outstream):
+        outstream.write('"'+name+'"')
+    
+    def write_dict_name_value_separator(self, name, value, outstream):
+        outstream.write(': ')
+
+    
+    def write_value(self, val, outstream):
+        json.dump(val,outstream)
+            
+    
+    
 
 
 class JsonParser(Parser):
@@ -89,4 +144,12 @@ class JsonObjectMapper(ObjectMapper):
     
     def __init__(self,  events):
         ObjectMapper.__init__(self,JSONDictionary(),events);
+        
+        
+
+class JsonGenerator(DataFormatGenerator):
+    
+    
+    def __init__(self):
+        super(JsonGenerator, self).__init__(JSONDictionary())
         
