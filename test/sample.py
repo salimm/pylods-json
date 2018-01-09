@@ -3,7 +3,7 @@ from pylods.deserialize import Typed, EventBasedDeserializer
 from pylodsjson.pylodsjson import JsonParser, JsonObjectMapper
 from pylods.mapper import ObjectMapper, Module
 import io
-from pylods.decorators import rename_attr
+from pylods.decorators import rename_attr, use_serializer
 from pylods.serialize import Serializer
 
 
@@ -44,19 +44,28 @@ TestClass.register_type('obj', PersonInfo)
 class PersonInfoDeserializer(EventBasedDeserializer):
     
     def deserialize(self, events, pdict):
-        mapper = ObjectMapper(pdict, events)
-        mapper.read_obj_propery_name()
-        firstname = mapper.read_value()
-        mapper.read_obj_propery_name()
-        lastname = mapper.read_value()
-        mapper.read_obj_propery_name()
-        jobs = mapper.read_array(cls=Job)
+        mapper = ObjectMapper(pdict)
+        mapper.read_obj_propery_name(events)
+        firstname = mapper.read_value(events)
+        mapper.read_obj_propery_name(events)
+        lastname = mapper.read_value(events)
+        mapper.read_obj_propery_name(events)
+        jobs = mapper.read_array(events,cls=Job)
         return PersonInfo(firstname, lastname, jobs)
     
-    def handled_class(self):
-        return PersonInfo
     
+class Test2Serializer(Serializer):
     
+    def serialize(self, gen, obj, outstream):
+        gen.write_object_start(1, outstream)
+        
+        gen.write_object_field('m', obj._y, outstream)
+        gen.write_object_field_separator('x', obj.x, outstream);
+        gen.write_object_field('x', obj.x, outstream)
+        
+        gen.write_object_end(1, outstream)
+    
+@use_serializer(Test2Serializer)    
 @rename_attr('_y', 'm')
 @rename_attr('x', 'l')
 class Test2:
@@ -69,23 +78,11 @@ class Test2:
         return str(self.__dict__)
         
     
-class Test2Serializer(Serializer):
-    
-    def serialize(self, gen, obj, outstream):
-        gen.write_object_start(1, outstream)
-        
-        gen.write_object_field('m', obj._y, outstream)
-        
-        gen.write_object_end(1, outstream)
-    
-    def handled_class(self):
-        return Test2
     
     
 mod = Module()
-mod.add_deserializer(PersonInfoDeserializer())
-mod.add_serializer(Test2Serializer())
-    
+mod.add_deserializer(PersonInfo, PersonInfoDeserializer())
+
         
 
 x = PersonInfo()
@@ -96,11 +93,11 @@ f = open("../sample2.json", 'r')
 
 
 parser = JsonParser()
-mapper = JsonObjectMapper(parser.parse(f))
+mapper = JsonObjectMapper()
 mapper.register_module(mod)
 
 
-res = mapper.read_obj(TestClass)
+res = mapper.read_obj(parser.parse(f), TestClass)
 
     
     
@@ -119,14 +116,14 @@ out = io.BytesIO()
 
 t2 = Test2(1, 2)
 
-
+mapper = mapper.copy()
 mapper.write(t2, out)
 print(out.getvalue())
 out.seek(0)
 
 parser = JsonParser()
-mapper = JsonObjectMapper(parser.parse(out))
-t2out = mapper.read_obj(Test2)
+mapper = JsonObjectMapper()
+t2out = mapper.read_obj(parser.parse(out),Test2)
 
 print(t2out)
 

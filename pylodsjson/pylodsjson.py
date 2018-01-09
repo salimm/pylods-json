@@ -38,7 +38,7 @@ class JSONDictionary(Dictionary):
             indicates if the given or tuple representing an event that represents a raw value
             :param event:
         '''
-        return event[2] is not None
+        return event[2] is not None or (event[1] == 'null' or event[1] == u'null')
         
     def is_obj_property_name(self, event):
         '''
@@ -142,8 +142,8 @@ class JsonObjectMapper(ObjectMapper):
     '''
     
     
-    def __init__(self,  events):
-        ObjectMapper.__init__(self,JSONDictionary(),events);
+    def __init__(self):
+        ObjectMapper.__init__(self,JSONDictionary());
         
         
 
