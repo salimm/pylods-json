@@ -6,5 +6,4 @@
 dist
 build
 *.json
-pylods.egg-info/
-.git/
+pylods_json.egg-info/
