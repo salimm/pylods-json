@@ -1,10 +1,12 @@
 
 from pylods.deserialize import Typed, EventBasedDeserializer
-from pylodsjson.pylodsjson import JsonParser, JsonObjectMapper
-from pylods.mapper import ObjectMapper, Module
+from pylodsjson.pylodsjson import JsonParser, JsonObjectMapper, JSONDictionary
 import io
-from pylods.decorators import rename_attr, use_serializer
+from pylods.decorators import rename_attr, use_serializer, type_attr
 from pylods.serialize import Serializer
+from pylods.backend.pylodsp.mapper import PyObjectMapper
+from pylods.backend.pylodsc.mapper import CObjectMapper
+from pylods.mapper import ObjectMapper
 
 
 
@@ -15,6 +17,7 @@ class Job(Typed):
         self.location = location
         
 
+@type_attr('jobs', Job)
 class PersonInfo(Typed):
     
     def __init__(self, firstname=None, lastname=None, jobs=None):
@@ -25,7 +28,7 @@ class PersonInfo(Typed):
     def __str__(self):
         return "{ first: " + self.firstname + ", last: " + self.lastname + ", jobs: " + str(self.jobs) + "}";
     
-PersonInfo.register_type("jobs", Job)
+# PersonInfo.register_type("jobs", Job)
 
 class TestClass(Typed):
     
@@ -42,8 +45,8 @@ TestClass.register_type('obj', PersonInfo)
 
 
 class PersonInfoDeserializer(EventBasedDeserializer):
-    
-    def deserialize(self, events, pdict):
+     
+    def deserialize(self, events, pdict, ctxt):
         mapper = ObjectMapper(pdict)
         mapper.read_obj_propery_name(events)
         firstname = mapper.read_value(events)
@@ -52,7 +55,7 @@ class PersonInfoDeserializer(EventBasedDeserializer):
         mapper.read_obj_propery_name(events)
         jobs = mapper.read_array(events,cls=Job)
         return PersonInfo(firstname, lastname, jobs)
-    
+#     
     
 class Test2Serializer(Serializer):
     
@@ -65,6 +68,7 @@ class Test2Serializer(Serializer):
         
         gen.write_object_end(1, outstream)
     
+
 @use_serializer(Test2Serializer)    
 @rename_attr('_y', 'm')
 @rename_attr('x', 'l')
@@ -80,31 +84,31 @@ class Test2:
     
     
     
-mod = Module()
-mod.add_deserializer(PersonInfo, PersonInfoDeserializer())
+# mod = Module()
+# mod.add_deserializer(PersonInfo, PersonInfoDeserializer())
 
         
 
 x = PersonInfo()
 y = Typed()
-print(TestClass._types)
+# print(TestClass._types)
  
 f = open("../sample2.json", 'r')
-
+    
 
 parser = JsonParser()
-mapper = JsonObjectMapper()
-mapper.register_module(mod)
+mapper = JsonObjectMapper(CObjectMapper(JSONDictionary()))
+# mapper.register_module(mod)
 
-
-res = mapper.read_obj(parser.parse(f), TestClass)
+events = parser.parse(f)
+res = mapper.read_obj(events, TestClass)
 
     
-    
 
 
 
-print(res)
+
+print("************************************* \n" + str(res))
 print(res.codes)
 print(res.obj)
 
@@ -122,8 +126,8 @@ print(out.getvalue())
 out.seek(0)
 
 parser = JsonParser()
-mapper = JsonObjectMapper()
-t2out = mapper.read_obj(parser.parse(out),Test2)
+mapper = JsonObjectMapper(PyObjectMapper(JSONDictionary()));
+t2out = mapper.read_obj(parser.parse(out), Test2)
 
 print(t2out)
 

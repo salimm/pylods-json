@@ -9,6 +9,7 @@ import ijson
 import json
 from pylods.mapper import ObjectMapper
 from pylods.serialize import DataFormatGenerator
+from pylods.backend.pylodsp.mapper import PyObjectMapper
 
 
 class JSONDictionary(Dictionary):
@@ -142,8 +143,11 @@ class JsonObjectMapper(ObjectMapper):
     '''
     
     
-    def __init__(self):
-        ObjectMapper.__init__(self,JSONDictionary());
+    def __init__(self, backend=None):
+        if(backend is None):
+            ObjectMapper.__init__(self,PyObjectMapper(JSONDictionary()));
+        else:
+            ObjectMapper.__init__(self,backend);
         
         
 
