@@ -7,6 +7,7 @@ from pylods.serialize import Serializer
 from pylods.backend.pylodsp.mapper import PyObjectMapper
 from pylods.backend.pylodsc.mapper import CObjectMapper
 from pylods.mapper import ObjectMapper
+from _io import BytesIO
 
 
 
@@ -40,8 +41,8 @@ class TestClass(Typed):
     def __str__(self):
         return "{TestClass name: " + str(self.codes) + ", value: " + str(self.value) + ", obj: " + str(self.obj) + " }";
 
-
 TestClass.register_type('obj', PersonInfo)
+
 
 
 class PersonInfoDeserializer(EventBasedDeserializer):
@@ -93,7 +94,7 @@ x = PersonInfo()
 y = Typed()
 # print(TestClass._types)
  
-f = open("../sample2.json", 'r')
+f = open("../samples/sample2.json", 'r')
     
 
 parser = JsonParser()
@@ -133,3 +134,11 @@ print(t2out)
 
 
 
+
+out = BytesIO();
+parser = JsonParser()
+mapper = JsonObjectMapper(CObjectMapper(JSONDictionary()))
+mapper.write([{"x":1}, {"x":1}], out)
+out.seek(0)
+events = parser.parse(f)
+res = mapper.read_obj(events, TestClass)
