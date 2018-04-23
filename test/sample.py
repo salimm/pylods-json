@@ -1,8 +1,8 @@
 
-from pylods.deserialize import Typed, EventBasedDeserializer
+from pylods.deserialize import Typed, EventBasedDeserializer, Module
 from pylodsjson.pylodsjson import JsonParser, JsonObjectMapper, JSONDictionary
 import io
-from pylods.decorators import rename_attr, use_serializer, type_attr
+from pylods.decorators import rename_attr, use_serializer, type_attr, order_attr
 from pylods.serialize import Serializer
 from pylods.backend.pylodsp.mapper import PyObjectMapper
 from pylods.backend.pylodsc.mapper import CObjectMapper
@@ -10,6 +10,7 @@ from pylods.mapper import ObjectMapper
 from _io import BytesIO
 
 
+backend = CObjectMapper
 
 class Job(Typed):
     
@@ -19,6 +20,9 @@ class Job(Typed):
         
 
 @type_attr('jobs', Job)
+@order_attr('firstname',1)
+@order_attr('lastname',2)
+@order_attr('jobs',3)
 class PersonInfo(Typed):
     
     def __init__(self, firstname=None, lastname=None, jobs=None):
@@ -27,7 +31,7 @@ class PersonInfo(Typed):
         self.jobs = jobs
     
     def __str__(self):
-        return "{ first: " + self.firstname + ", last: " + self.lastname + ", jobs: " + str(self.jobs) + "}";
+        return "{PersonInfo first: " + self.firstname + ", last: " + self.lastname + ", jobs: " + str(self.jobs) + "}";
     
 # PersonInfo.register_type("jobs", Job)
 
@@ -48,12 +52,14 @@ TestClass.register_type('obj', PersonInfo)
 class PersonInfoDeserializer(EventBasedDeserializer):
      
     def deserialize(self, events, pdict, ctxt):
-        mapper = ObjectMapper(pdict)
-        mapper.read_obj_propery_name(events)
+        mapper = ObjectMapper(backend(pdict))
+        print(mapper.read_obj_property_name(events))        
         firstname = mapper.read_value(events)
-        mapper.read_obj_propery_name(events)
+        print("fn "+firstname)
+        mapper.read_obj_property_name(events)
         lastname = mapper.read_value(events)
-        mapper.read_obj_propery_name(events)
+        print("ln "+str(lastname))
+        mapper.read_obj_property_name(events)
         jobs = mapper.read_array(events,cls=Job)
         return PersonInfo(firstname, lastname, jobs)
 #     
@@ -85,8 +91,8 @@ class Test2:
     
     
     
-# mod = Module()
-# mod.add_deserializer(PersonInfo, PersonInfoDeserializer())
+mod = Module()
+mod.add_deserializer(PersonInfo, PersonInfoDeserializer())
 
         
 
@@ -98,8 +104,8 @@ f = open("../samples/sample2.json", 'r')
     
 
 parser = JsonParser()
-mapper = JsonObjectMapper(CObjectMapper(JSONDictionary()))
-# mapper.register_module(mod)
+mapper = JsonObjectMapper(backend(JSONDictionary()))
+mapper.register_module(mod)
 
 events = parser.parse(f)
 res = mapper.read_obj(events, TestClass)
@@ -112,33 +118,46 @@ res = mapper.read_obj(events, TestClass)
 print("************************************* \n" + str(res))
 print(res.codes)
 print(res.obj)
-
+ 
 res.x = 5
-
 res._y = 4
-
+ 
+ 
+print("???????????????")
 out = io.BytesIO()
-
 t2 = Test2(1, 2)
-
 mapper = mapper.copy()
 mapper.write(t2, out)
 print(out.getvalue())
 out.seek(0)
-
 parser = JsonParser()
-mapper = JsonObjectMapper(PyObjectMapper(JSONDictionary()));
-t2out = mapper.read_obj(parser.parse(out), Test2)
-
+print("???????????????2")
+mapper = JsonObjectMapper(backend(JSONDictionary()));
+t2out = mapper.read_obj(parser.parse(out), cls=Test2)
 print(t2out)
-
-
-
-
+ 
+print("&&&&&&&&&&&&&&&&&&&&&&&&&")
+ 
 out = BytesIO();
 parser = JsonParser()
-mapper = JsonObjectMapper(CObjectMapper(JSONDictionary()))
+mapper = JsonObjectMapper(backend(JSONDictionary()))
 mapper.write([{"x":1}, {"x":1}], out)
 out.seek(0)
-events = parser.parse(f)
-res = mapper.read_obj(events, TestClass)
+events = parser.parse(out)
+res = mapper.read_array(events, cls=dict)
+print(res)
+
+print("&&&&&&&&&&&&&&&&&&&&&&&&&2")
+
+pi =PersonInfo("test", "Test", [Job("J1", "L1")]);
+out = BytesIO();
+parser = JsonParser()
+mapper = JsonObjectMapper(backend(JSONDictionary()))
+m = Module()
+m.add_deserializer(PersonInfo, PersonInfoDeserializer())
+mapper.register_module(m)
+mapper.write(pi, out)
+out.seek(0)
+events = parser.parse(out)
+res = mapper.read_obj(events, cls=PersonInfo)
+print(res)
