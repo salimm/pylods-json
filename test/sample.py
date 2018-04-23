@@ -10,7 +10,7 @@ from pylods.mapper import ObjectMapper
 from _io import BytesIO
 
 
-backend = CObjectMapper
+backend = PyObjectMapper
 
 class Job(Typed):
     
@@ -52,7 +52,7 @@ TestClass.register_type('obj', PersonInfo)
 class PersonInfoDeserializer(EventBasedDeserializer):
      
     def deserialize(self, events, pdict, ctxt):
-        mapper = ObjectMapper(backend(pdict))
+        mapper = ObjectMapper(pdict.mapper_backend)
         print(mapper.read_obj_property_name(events))        
         firstname = mapper.read_value(events)
         print("fn "+firstname)

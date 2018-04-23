@@ -14,6 +14,9 @@ from pylods.backend.pylodsp.mapper import PyObjectMapper
 
 class JSONDictionary(Dictionary):
     
+    def __init__(self):
+        super(JSONDictionary, self).__init__()
+    
     def gen_events(self, instream):
         '''
             generates events from parsing the input stream
