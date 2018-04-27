@@ -10,7 +10,7 @@ from pylods.mapper import ObjectMapper
 from _io import BytesIO
 
 
-backend = PyObjectMapper
+backend = CObjectMapper
 
 class Job(Typed):
     
@@ -23,6 +23,7 @@ class Job(Typed):
 @order_attr('firstname',1)
 @order_attr('lastname',2)
 @order_attr('jobs',3)
+@rename_attr('firstname','fn')
 class PersonInfo(Typed):
     
     def __init__(self, firstname=None, lastname=None, jobs=None):
@@ -156,6 +157,22 @@ mapper = JsonObjectMapper(backend(JSONDictionary()))
 m = Module()
 m.add_deserializer(PersonInfo, PersonInfoDeserializer())
 mapper.register_module(m)
+mapper.write(pi, out)
+out.seek(0)
+events = parser.parse(out)
+res = mapper.read_obj(events, cls=PersonInfo)
+print(res)
+
+
+print("&&&&&&&&&&&&&&&&&&&&&&&&&3")
+
+pi =PersonInfo("test", "Test", [Job("J1", "L1")]);
+out = BytesIO();
+parser = JsonParser()
+mapper = JsonObjectMapper(backend(JSONDictionary()))
+m = Module()
+m.add_deserializer(PersonInfo, PersonInfoDeserializer())
+# mapper.register_module(m)
 mapper.write(pi, out)
 out.seek(0)
 events = parser.parse(out)
